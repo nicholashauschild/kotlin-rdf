@@ -54,12 +54,3 @@ class ResourceBuilder {
 
     fun build() = Resource(uri ?: throw IllegalArgumentException())
 }
-
-fun test() {
-    val graph =
-        rdfGraph {
-            +resource {!"http://person/Doug"}
-            +resource {!"http://animal/Dog"}
-            +resource {!"http://book/Dug"}
-        }
-}
