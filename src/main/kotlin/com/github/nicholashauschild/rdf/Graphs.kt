@@ -31,7 +31,7 @@ fun rdfModel(fillFunction: ModelFiller.() -> Unit): Model {
  */
 fun rdfGraphFrom(model: Model, fillFunction: ModelFiller.() -> Unit): Model {
     val modelFiller = ModelFiller()
-    fillFunction(modelFiller);
+    fillFunction(modelFiller)
     return modelFiller.fill(model)
 }
 

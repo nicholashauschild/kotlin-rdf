@@ -9,7 +9,7 @@ import java.net.URI
 fun propertySchema(ns: String, populatingFunction: SchemaPopulator.() -> Unit): PropertySchema {
     val schemaPopulator = SchemaPopulator()
     populatingFunction(schemaPopulator)
-    return PropertySchema(ns, schemaPopulator.properties);
+    return PropertySchema(ns, schemaPopulator.properties)
 }
 
 fun pSchema(ns: String, populatingFunction: SchemaPopulator.() -> Unit): PropertySchema {
