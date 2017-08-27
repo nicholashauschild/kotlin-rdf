@@ -11,55 +11,53 @@ import java.net.URI
 
 /**
  * DSL starting point for creating an rdf graph.  Uses the default
- * Model according to Apache Jena.
+ * Model according to Apache Jena [ModelFactory.createDefaultModel()].
  */
-fun rdfGraph(populatingFunction: ModelPopulator.() -> Unit): Model {
+fun rdfGraph(fillFunction: ModelFiller.() -> Unit): Model {
     val model = ModelFactory.createDefaultModel()
-    return rdfGraphFrom(model, populatingFunction)
+    return rdfGraphFrom(model, fillFunction)
 }
 
 /**
  * Alias of rdfGraph
  */
-fun rdfModel(populatingFunction: ModelPopulator.() -> Unit): Model {
-    return rdfGraph(populatingFunction)
+fun rdfModel(fillFunction: ModelFiller.() -> Unit): Model {
+    return rdfGraph(fillFunction)
 }
 
 /**
  * DSL starting point for creating an rdf graph.  Uses the provided
  * Model to populate.
  */
-fun rdfGraphFrom(model: Model, populatingFunction: ModelPopulator.() -> Unit): Model {
-    val modelPopulator = ModelPopulator()
-    populatingFunction(modelPopulator);
-    return modelPopulator.populate(model)
+fun rdfGraphFrom(model: Model, fillFunction: ModelFiller.() -> Unit): Model {
+    val modelFiller = ModelFiller()
+    fillFunction(modelFiller);
+    return modelFiller.fill(model)
 }
 
 /**
  * Alias of rdfGraphFrom
  */
-fun rdfModelFrom(model: Model, populatingFunction: ModelPopulator.() -> Unit): Model {
-    return rdfGraphFrom(model, populatingFunction)
+fun rdfModelFrom(model: Model, fillFunction: ModelFiller.() -> Unit): Model {
+    return rdfGraphFrom(model, fillFunction)
 }
 
-class ModelPopulator {
-    val resources: MutableMap<URI, PropertyMappings> = mutableMapOf()
+class ModelFiller(val resourceFillers: MutableMap<URI, ResourceFiller> = mutableMapOf()) {
+    fun resource(uri: URI, fillFunction: ResourceFiller.() -> Unit) {
+        val resourceFiller = ResourceFiller()
+        fillFunction(resourceFiller)
 
-    fun resource(uri: URI, infoGatherer: PropertyMappings.() -> Unit) {
-        val propertyMappings = PropertyMappings()
-        infoGatherer(propertyMappings)
-
-        resources[uri] = propertyMappings
+        resourceFillers[uri] = resourceFiller
     }
 
     operator fun String.not(): URI {
         return URI(this)
     }
 
-    internal fun populate(model: Model): Model {
-        resources.forEach {
+    internal fun fill(model: Model): Model {
+        resourceFillers.forEach {
             val r = model.createResource(it.key.toString())
-            it.value.mappings.forEach {
+            it.value.propertyMapping.forEach {
                 r.addProperty(PropertyImpl(it.key.toString()), it.value)
             }
         }
@@ -68,16 +66,17 @@ class ModelPopulator {
     }
 }
 
-class PropertyMappings {
-    val mappings: MutableMap<URI, String> = mutableMapOf()
-    operator fun PropertySchema.invoke(key: String): UnmappedProperty {
-        return UnmappedProperty(this.properties[key], mappings)
+class ResourceFiller(val propertyMapping: MutableMap<URI, String> = mutableMapOf()) {
+    operator fun PropertySchema.invoke(key: String): _UnmappedPropertyMapper {
+        return _UnmappedPropertyMapper(this.properties, key, propertyMapping)
     }
 }
 
-class UnmappedProperty(val uri: URI?,
-                       val mappings: MutableMap<URI, String>) {
+class _UnmappedPropertyMapper(private val schemaProperties: Map<String, URI>,
+                              private val key: String,
+                              private val propertyMapping: MutableMap<URI, String>) {
     infix fun of(literal: String) {
-        mappings[uri ?: throw RuntimeException("Unknown schema property")] = literal
+        val uri = schemaProperties[key] ?: throw UnknownPropertyException(key)
+        propertyMapping[uri] = literal
     }
 }
