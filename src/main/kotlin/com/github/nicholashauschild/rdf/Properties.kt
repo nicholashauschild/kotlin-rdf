@@ -45,3 +45,7 @@ class PropertyIntermediate(private val name: String,
         properties[name] = uri
     }
 }
+
+open class PropertySchemaException(override val message: String): RuntimeException(message)
+
+class UnknownPropertyException(override val message: String): PropertySchemaException(message)
