@@ -4,7 +4,8 @@ import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
 import org.jetbrains.spek.api.dsl.on
-import kotlin.test.assertNotNull
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
@@ -14,37 +15,47 @@ object RdfSpec : Spek({
     describe("the empty RdfGraph") {
         val graph =
 
-
                 rdfGraph {  }
 
+        on("accessing the iterator") {
+            val iterator = graph.listObjects()
 
-        on("getting the model") {
-            val model = graph.getModel()
-
-            it("contains no statements") {
-                assertTrue(model.isEmpty)
+            it("has no elements") {
+                assertFalse(iterator.hasNext())
             }
+        }
+
+        it("has no statements") {
+            assertTrue(graph.isEmpty)
         }
     }
 
-    describe("the one-resource RdfGraph") {
-        val graph =
+    describe("the populated RdfGraph") {
+        val pSchema =
 
-
-                rdfGraph {
-                    +resource { !"http://person/nick" }
+                pSchema("something") {
+                    +"name" from !"http://something/name"
+                    +"age" from !"http://something/age"
                 }
 
+        val graph =
 
-        on("getting the model") {
-            val model = graph.getModel()
+                rdfGraph {
+                    resource(!"http://something/person/nick") {
+                        pSchema("name") of "Nick"
+                        pSchema("age") of "100"
+                    }
+                }
 
-            it("contains no statements") {
-                assertTrue(model.isEmpty)
-            }
+        it("has 2 statements") {
+            assertEquals(2, graph.size())
+        }
 
-            it("should contain a resource for 'http://person/nick'") {
-                assertNotNull(model.getResource("http://person/nick"))
+        on("accessing the iterator") {
+            val iterator = graph.listObjects()
+
+            it("has next element") {
+                assertTrue(iterator.hasNext())
             }
         }
     }
