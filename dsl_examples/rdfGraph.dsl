@@ -7,8 +7,8 @@ val r = pSchema (ns) {
 }
 
 rdfGraph {
-    resource (!"http://something/person/me") {
-        s(name) of "nick"
-        r(name) of "nicholas"
+    resource(!"http://something/person/nick") {
+        s("name") of "Nick"
+        r("age") of "100"
     }
 }

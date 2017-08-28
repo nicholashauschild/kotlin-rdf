@@ -1,5 +1,5 @@
-pSchema (SCHEMA_NAME) {
-    property (PROPERTY_NAME) { !"http://something/property/name" }
-    prop (ANOTHER_PROPERTY) { !"http://something/property/name" }
-    +PROPERTY by !"http://something/property/name"
+pSchema("namespace") {
+    property("name") { !"http://something/property/name" }
+    prop("age") { !"http://something/property/age" }
+    +"height" from !"http://something/property/height"
 }
