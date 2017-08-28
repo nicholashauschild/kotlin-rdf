@@ -42,18 +42,31 @@ fun rdfModelFrom(model: Model, fillFunction: ModelFiller.() -> Unit): Model {
     return rdfGraphFrom(model, fillFunction)
 }
 
+/**
+ * Receiver object for the fillFunction provided to the rdfGraph DSL functions.
+ * This object defines further DSL methods that can be utilized to 'fill' an
+ * RdfModel or RdfGraph.
+ */
 class ModelFiller(val resourceFillers: MutableMap<URI, ResourceFiller> = mutableMapOf()) {
+    /**
+     * DSL function that supports creation of resources for the wrapping model.
+     */
     fun resource(uri: URI, fillFunction: ResourceFiller.() -> Unit) {
         val resourceFiller = ResourceFiller()
         fillFunction(resourceFiller)
-
         resourceFillers[uri] = resourceFiller
     }
 
+    /**
+     * Operator override [!] -- Shorthand way to convert a String to a URI
+     */
     operator fun String.not(): URI {
         return URI(this)
     }
 
+    /**
+     * Function that will 'fill' the provided Model, once the DSL has been processed.
+     */
     internal fun fill(model: Model): Model {
         resourceFillers.forEach {
             val r = model.createResource(it.key.toString())
@@ -66,17 +79,34 @@ class ModelFiller(val resourceFillers: MutableMap<URI, ResourceFiller> = mutable
     }
 }
 
+/**
+ * Receiver object for the fillFunction provided to the resource DSL functions.
+ * This object defines further DSL methods that can be utilized to 'fill' a
+ * Resource with properties.
+ */
 class ResourceFiller(val propertyMapping: MutableMap<URI, String> = mutableMapOf()) {
+    /**
+     * Operator overload [invoke] -- Create supporting builder class, providing it with the
+     * predicate to use for mapping a resource/literal to, as well as the propertyMappings
+     * to be 'filled'
+     */
     operator fun PropertySchema.invoke(key: String): _UnmappedPropertyMapper {
-        return _UnmappedPropertyMapper(this.properties, key, propertyMapping)
+        val predicate = this.properties[key] ?: throw UnknownPropertyException(key)
+        return _UnmappedPropertyMapper(predicate, propertyMapping)
     }
 }
 
-class _UnmappedPropertyMapper(private val schemaProperties: Map<String, URI>,
-                              private val key: String,
+/**
+ * An class to support a 'builder' style in the DSL.  Provides infix function
+ * to give a natural language way to describe property mappings for a resource.
+ */
+class _UnmappedPropertyMapper(private val predicate: URI,
                               private val propertyMapping: MutableMap<URI, String>) {
+    /**
+     * Infix 'of' -- assign provided literal value into the propertyMapping for
+     * given predicate URI.
+     */
     infix fun of(literal: String) {
-        val uri = schemaProperties[key] ?: throw UnknownPropertyException(key)
-        propertyMapping[uri] = literal
+        propertyMapping[predicate] = literal
     }
 }
