@@ -30,9 +30,9 @@ fun rdfModel(fillFunction: ModelFiller.() -> Unit): Model {
  * Model to populate.
  */
 fun rdfGraphFrom(model: Model, fillFunction: ModelFiller.() -> Unit): Model {
-    val modelFiller = ModelFiller()
+    val modelFiller = ModelFiller(model)
     fillFunction(modelFiller)
-    return modelFiller.fill(model)
+    return model
 }
 
 /**
@@ -47,14 +47,18 @@ fun rdfModelFrom(model: Model, fillFunction: ModelFiller.() -> Unit): Model {
  * This object defines further DSL methods that can be utilized to 'fill' an
  * RdfModel or RdfGraph.
  */
-class ModelFiller(val resourceFillers: MutableMap<URI, ResourceFiller> = mutableMapOf()) {
+class ModelFiller(val model: Model) {
     /**
      * DSL function that supports creation of resources for the wrapping model.
      */
     fun resource(resourceUri: URI, fillFunction: ResourceFiller.() -> Unit = {}) {
         val resourceFiller = ResourceFiller()
         fillFunction(resourceFiller)
-        resourceFillers[resourceUri] = resourceFiller
+
+        val r = model.createResource(resourceUri.toString())
+        resourceFiller.propertyMapping.forEach {
+            r.addProperty(PropertyImpl(it.key.toString()), it.value)
+        }
     }
 
     /**
@@ -62,20 +66,6 @@ class ModelFiller(val resourceFillers: MutableMap<URI, ResourceFiller> = mutable
      */
     operator fun String.not(): URI {
         return URI(this)
-    }
-
-    /**
-     * Function that will 'fill' the provided Model, once the DSL has been processed.
-     */
-    internal fun fill(model: Model): Model {
-        resourceFillers.forEach {
-            val r = model.createResource(it.key.toString())
-            it.value.propertyMapping.forEach {
-                r.addProperty(PropertyImpl(it.key.toString()), it.value)
-            }
-        }
-
-        return model
     }
 }
 
