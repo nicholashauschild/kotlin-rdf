@@ -51,7 +51,7 @@ class ModelFiller(val resourceFillers: MutableMap<URI, ResourceFiller> = mutable
     /**
      * DSL function that supports creation of resources for the wrapping model.
      */
-    fun resource(resourceUri: URI, fillFunction: ResourceFiller.() -> Unit) {
+    fun resource(resourceUri: URI, fillFunction: ResourceFiller.() -> Unit = {}) {
         val resourceFiller = ResourceFiller()
         fillFunction(resourceFiller)
         resourceFillers[resourceUri] = resourceFiller
