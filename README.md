@@ -71,3 +71,7 @@ rdfGraph {
     }
 }
 ```
+
+## Questions
+1. Why are you doing this? To learn how to make a DSL in Kotlin and to learn more about RDF.
+2. Why can't I create a triple with the Object being a Resource (or even a non-String literal)?  Because I haven't written that functionality yet.
