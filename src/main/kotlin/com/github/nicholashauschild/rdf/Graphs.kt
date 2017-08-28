@@ -19,7 +19,7 @@ fun rdfGraph(fillFunction: ModelFiller.() -> Unit): Model {
 }
 
 /**
- * Alias of rdfGraph
+ * Alias of 'rdfGraph'
  */
 fun rdfModel(fillFunction: ModelFiller.() -> Unit): Model {
     return rdfGraph(fillFunction)
@@ -36,7 +36,7 @@ fun rdfGraphFrom(model: Model, fillFunction: ModelFiller.() -> Unit): Model {
 }
 
 /**
- * Alias of rdfGraphFrom
+ * Alias of 'rdfGraphFrom'
  */
 fun rdfModelFrom(model: Model, fillFunction: ModelFiller.() -> Unit): Model {
     return rdfGraphFrom(model, fillFunction)
@@ -58,7 +58,7 @@ class ModelFiller(val resourceFillers: MutableMap<URI, ResourceFiller> = mutable
     }
 
     /**
-     * Operator override [!] -- Shorthand way to convert a String to a URI
+     * Operator overloading [!] -- Shorthand way to convert a String to a URI
      */
     operator fun String.not(): URI {
         return URI(this)
@@ -86,7 +86,7 @@ class ModelFiller(val resourceFillers: MutableMap<URI, ResourceFiller> = mutable
  */
 class ResourceFiller(val propertyMapping: MutableMap<URI, String> = mutableMapOf()) {
     /**
-     * Operator overload [invoke] -- Create supporting builder class, providing it with the
+     * Operator overloading [invoke] -- Create supporting builder class, providing it with the
      * predicate to use for mapping a resource/literal to, as well as the propertyMappings
      * to be 'filled'
      */
@@ -97,7 +97,7 @@ class ResourceFiller(val propertyMapping: MutableMap<URI, String> = mutableMapOf
 }
 
 /**
- * An class to support a 'builder' style in the DSL.  Provides infix function
+ * Class to support a 'builder' style in the DSL.  Provides infix function
  * to give a natural language way to describe property mappings for a resource.
  */
 class _UnmappedPropertyMapper(private val predicate: URI,

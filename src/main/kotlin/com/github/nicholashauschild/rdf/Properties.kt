@@ -9,17 +9,17 @@ import java.net.URI
 /**
  * DSL starting point for creating a PropertySchema
  */
-fun propertySchema(ns: String, populatingFunction: SchemaPopulator.() -> Unit): PropertySchema {
-    val schemaPopulator = SchemaPopulator()
-    populatingFunction(schemaPopulator)
-    return PropertySchema(ns, schemaPopulator.properties)
+fun propertySchema(ns: String, captureFunction: PropertyCapturer.() -> Unit): PropertySchema {
+    val propertyCapturer = PropertyCapturer()
+    captureFunction(propertyCapturer)
+    return PropertySchema(ns, propertyCapturer.properties)
 }
 
 /**
- * Alias for propertySchema
+ * Alias for 'propertySchema'
  */
-fun pSchema(ns: String, populatingFunction: SchemaPopulator.() -> Unit): PropertySchema {
-    return propertySchema(ns, populatingFunction)
+fun pSchema(ns: String, captureFunction: PropertyCapturer.() -> Unit): PropertySchema {
+    return propertySchema(ns, captureFunction)
 }
 
 /**
@@ -29,28 +29,52 @@ fun pSchema(ns: String, populatingFunction: SchemaPopulator.() -> Unit): Propert
 data class PropertySchema(val ns: String,
                           val properties: Map<String, URI>)
 
-class SchemaPopulator {
-    val properties: MutableMap<String, URI> = mutableMapOf()
-
+/**
+ * Receiver object for captureFunction provided to the propertySchema DSL functions.
+ * This object defines further DSL functions that are useful for defining a property
+ * schema.
+ */
+class PropertyCapturer(val properties: MutableMap<String, URI> = mutableMapOf()) {
+    /**
+     * DSL function that supports creation of properties for the schema.
+     */
     fun property(key: String, uriRetriever: () -> URI) {
         properties[key] = uriRetriever()
     }
 
+    /**
+     * Alias of 'property'
+     */
     fun prop(key: String, uriRetriever: () -> URI) {
         property(key, uriRetriever)
     }
 
-    operator fun String.unaryPlus(): PropertyIntermediate {
-        return PropertyIntermediate(this, properties)
+    /**
+     * Operator overloading [+] -- Used to start a 'shorthand' builder
+     * to define a property without using a function 'keyword'.
+     */
+    operator fun String.unaryPlus(): _UnmappedProperty {
+        return _UnmappedProperty(this, properties)
     }
 
+    /**
+     * Operator overloading [!] -- Shorthand way to convert a String to a URI
+     */
     operator fun String.not(): URI {
         return URI(this)
     }
 }
 
-class PropertyIntermediate(private val name: String,
-                           private val properties: MutableMap<String, URI>) {
+/**
+ * Class to support a 'builder' style in the DSL.  Provides infix function to
+ * give a natural language way to describe a schema property
+ */
+class _UnmappedProperty(private val name: String,
+                        private val properties: MutableMap<String, URI>) {
+    /**
+     * Infix 'from' -- assign provided URI into the propertyMapping for
+     * given name.
+     */
     infix fun from(uri: URI) {
         properties[name] = uri
     }
