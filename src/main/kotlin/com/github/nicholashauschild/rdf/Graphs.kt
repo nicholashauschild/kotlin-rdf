@@ -51,10 +51,10 @@ class ModelFiller(val resourceFillers: MutableMap<URI, ResourceFiller> = mutable
     /**
      * DSL function that supports creation of resources for the wrapping model.
      */
-    fun resource(uri: URI, fillFunction: ResourceFiller.() -> Unit) {
+    fun resource(resourceUri: URI, fillFunction: ResourceFiller.() -> Unit) {
         val resourceFiller = ResourceFiller()
         fillFunction(resourceFiller)
-        resourceFillers[uri] = resourceFiller
+        resourceFillers[resourceUri] = resourceFiller
     }
 
     /**
@@ -91,8 +91,8 @@ class ResourceFiller(val propertyMapping: MutableMap<URI, String> = mutableMapOf
      * to be 'filled'
      */
     operator fun PropertySchema.invoke(key: String): _UnmappedPropertyMapper {
-        val predicate = this.properties[key] ?: throw UnknownPropertyException(key)
-        return _UnmappedPropertyMapper(predicate, propertyMapping)
+        val predicateUri = this.properties[key] ?: throw UnknownPropertyException(key)
+        return _UnmappedPropertyMapper(predicateUri, propertyMapping)
     }
 }
 
@@ -100,13 +100,13 @@ class ResourceFiller(val propertyMapping: MutableMap<URI, String> = mutableMapOf
  * Class to support a 'builder' style in the DSL.  Provides infix function
  * to give a natural language way to describe property mappings for a resource.
  */
-class _UnmappedPropertyMapper(private val predicate: URI,
+class _UnmappedPropertyMapper(private val predicateUri: URI,
                               private val propertyMapping: MutableMap<URI, String>) {
     /**
      * Infix 'of' -- assign provided literal value into the propertyMapping for
      * given predicate URI.
      */
     infix fun of(literal: String) {
-        propertyMapping[predicate] = literal
+        propertyMapping[predicateUri] = literal
     }
 }
