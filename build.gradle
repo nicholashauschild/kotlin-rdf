@@ -150,7 +150,7 @@ publishing {
 
             pom.withXml {
                 def root = asNode()
-                root.appendNode('description', '???')
+                root.appendNode('description', 'RDF DSL\'s written in Kotlin')
                 root.children().last() + pomConfig
             }
         }
@@ -162,8 +162,8 @@ artifactory {
     publish {
         repository {
             repoKey = 'oss-snapshot-local'
-//            username = bintrayUsername
-//            password = bintrayApiKey
+            username = bintrayUsername
+            password = bintrayApiKey
         }
         defaults {
             publications 'theJar'
@@ -184,8 +184,8 @@ bintray {
         licenses = ['MIT']
         vcsUrl = 'https://github.com/nicholashauschild/kotlin-rdf.git'
 
-        desc = '???'
-        labels = ['kotlin', 'rdf']
+        desc = 'RDF DSL\'s written in Kotlin'
+        labels = ['kotlin', 'rdf', 'dsl']
         websiteUrl = 'https://github.com/nicholashauschild/kotlin-rdf'
         issueTrackerUrl = 'https://github.com/nicholashauschild/kotlin-rdf/issues'
     }
