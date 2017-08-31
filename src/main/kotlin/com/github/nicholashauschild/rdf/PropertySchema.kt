@@ -34,31 +34,40 @@ fun pSchema(ns: String, builderFunction: PropertySchemaBuilder.() -> Unit)
  */
 class PropertySchema(val namespace: String,
                      private val properties: Map<String, Property>) {
+    /**
+     * Get operator that will throw IllegalArgumentException rather than
+     * return a Nullable type.
+     */
     operator fun get(key: String): Property {
-        return properties[key] ?: throw IllegalArgumentException("Unknown property: $key")
+        return properties[key] ?: throw UnknownPropertyException("Unknown property: $key")
     }
 
+    /**
+     * return number of properties in the schema
+     */
     fun size(): Int {
         return properties.size
     }
 }
 
 /**
- * Receiver object for captureFunction provided to the propertySchema DSL functions.
+ * Receiver object for builderFunction provided to the propertySchema DSL functions.
  * This object defines further DSL functions that are useful for defining a property
  * schema.
  */
 class PropertySchemaBuilder(val namespace: String,
                             val propertyMap: MutableMap<String, Property> = mutableMapOf()) {
     /**
-     *
+     * Shorthand mechanism for adding a property and mapping it in the schema.
+     * No customization of the property is allowed with this setup.
      */
     operator fun String.unaryPlus() {
         propertyMap[this] = PropertyBuilder(this, namespace).build()
     }
 
     /**
-     *
+     * 'Traditional' approach of using the builderFunction and the PropertyBuilder
+     * receiver object to allow for full customization of properties.
      */
     operator fun String.invoke(builderFunction: PropertyBuilder.() -> Unit) {
         val propertyBuilder = PropertyBuilder(this, namespace)
@@ -67,20 +76,21 @@ class PropertySchemaBuilder(val namespace: String,
     }
 
     /**
-     *
+     * Build a PropertySchema object with the properties of this instance.
      */
     internal fun build() = PropertySchema(namespace, propertyMap)
 }
 
 /**
- *
+ * Receiver object that is provided to the builderFunction that is capable
+ * of customizing a Property prior to building it.
  */
 class PropertyBuilder(propName: String,
                       namespace: String) {
     var uri = namespace.replace("{{property}}", propName)
 
     /**
-     *
+     * Build a Property object with the properties of this instance.
      */
     internal fun build() = ResourceFactory.createProperty(uri)
 }
@@ -96,7 +106,8 @@ open class PropertySchemaException(override val message: String): RuntimeExcepti
 class UnknownPropertyException(override val message: String): PropertySchemaException(message)
 
 /**
- *
+ * Ensures that provided namespace contains the '{{property}}' placeholder string
+ * to allow for proper URI generation.
  */
 internal fun validateNamespace(namespace: String) {
     if(!namespace.contains("{{property}}")) {
