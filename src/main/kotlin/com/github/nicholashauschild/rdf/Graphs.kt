@@ -1,8 +1,6 @@
 package com.github.nicholashauschild.rdf
 
-import org.apache.jena.rdf.model.Model
-import org.apache.jena.rdf.model.ModelFactory
-import org.apache.jena.rdf.model.impl.PropertyImpl
+import org.apache.jena.rdf.model.*
 import java.net.URI
 
 /**
@@ -13,33 +11,33 @@ import java.net.URI
  * DSL starting point for creating an rdf graph.  Uses the default
  * Model according to Apache Jena [ModelFactory.createDefaultModel()].
  */
-fun rdfGraph(fillFunction: ModelFiller.() -> Unit): Model {
+fun rdfGraph(fulfillFunction: ModelFulfiller.() -> Unit): Model {
     val model = ModelFactory.createDefaultModel()
-    return rdfGraphFrom(model, fillFunction)
+    return rdfGraphFrom(model, fulfillFunction)
 }
 
 /**
  * Alias of 'rdfGraph'
  */
-fun rdfModel(fillFunction: ModelFiller.() -> Unit): Model {
-    return rdfGraph(fillFunction)
+fun rdfModel(fulfillFunction: ModelFulfiller.() -> Unit): Model {
+    return rdfGraph(fulfillFunction)
 }
 
 /**
  * DSL starting point for creating an rdf graph.  Uses the provided
  * Model to populate.
  */
-fun rdfGraphFrom(model: Model, fillFunction: ModelFiller.() -> Unit): Model {
-    val modelFiller = ModelFiller(model)
-    fillFunction(modelFiller)
+fun rdfGraphFrom(model: Model, fulfillFunction: ModelFulfiller.() -> Unit): Model {
+    val modelFulfiller = ModelFulfiller(model)
+    fulfillFunction(modelFulfiller)
     return model
 }
 
 /**
  * Alias of 'rdfGraphFrom'
  */
-fun rdfModelFrom(model: Model, fillFunction: ModelFiller.() -> Unit): Model {
-    return rdfGraphFrom(model, fillFunction)
+fun rdfModelFrom(model: Model, fulfillFunction: ModelFulfiller.() -> Unit): Model {
+    return rdfGraphFrom(model, fulfillFunction)
 }
 
 /**
@@ -47,56 +45,70 @@ fun rdfModelFrom(model: Model, fillFunction: ModelFiller.() -> Unit): Model {
  * This object defines further DSL methods that can be utilized to 'fill' an
  * RdfModel or RdfGraph.
  */
-class ModelFiller(val model: Model) {
-    /**
-     * DSL function that supports creation of resources for the wrapping model.
-     */
-    fun resource(resourceUri: URI, fillFunction: ResourceFiller.() -> Unit = {}) {
-        val resourceFiller = ResourceFiller()
-        fillFunction(resourceFiller)
+class ModelFulfiller(val model: Model) {
+    private var resourceMapping: MutableMap<String, Resource> = mutableMapOf()
 
-        val r = model.createResource(resourceUri.toString())
-        resourceFiller.propertyMapping.forEach {
-            r.addProperty(PropertyImpl(it.key.toString()), it.value)
-        }
+    fun resources(gatherFunction: ResourcesGatherer.() -> Unit) {
+        val resourcesGatherer = ResourcesGatherer()
+        gatherFunction(resourcesGatherer)
+        resourceMapping.putAll(resourcesGatherer.resources)
     }
 
-    /**
-     * Operator overloading [!] -- Shorthand way to convert a String to a URI
-     */
-    operator fun String.not(): URI {
-        return URI(this)
+    fun statements(gatherFunction: StatementGatherer.() -> Unit) {
+        val statementGatherer = StatementGatherer(resourceMapping)
+        gatherFunction(statementGatherer)
+        model.add(statementGatherer.statements)
     }
 }
 
-/**
- * Receiver object for the fillFunction provided to the resource DSL functions.
- * This object defines further DSL methods that can be utilized to 'fill' a
- * Resource with properties.
- */
-class ResourceFiller(val propertyMapping: MutableMap<URI, String> = mutableMapOf()) {
-    /**
-     * Operator overloading [invoke] -- Create supporting builder class, providing it with the
-     * predicate to use for mapping a resource/literal to, as well as the propertyMappings
-     * to be 'filled'
-     */
-    operator fun PropertySchema.invoke(key: String): _UnmappedPropertyMapper {
-        val predicateUri = this.properties[key] ?: throw UnknownPropertyException(key)
-        return _UnmappedPropertyMapper(predicateUri, propertyMapping)
+class ResourcesGatherer(val resources: MutableMap<String, Resource> = mutableMapOf()) {
+    operator fun String.invoke(uri: String, builderFunction: ResourceBuilder.() -> Unit = {}) {
+        invokeAndBuild(this, builderFunction, { it.uri = uri })
+    }
+
+    private fun invokeAndBuild(name: String,
+                               builderFunction: ResourceBuilder.() -> Unit,
+                               doAfter: (ResourceBuilder) -> Unit = {}) {
+        val resourceBuilder = ResourceBuilder()
+        builderFunction(resourceBuilder)
+        doAfter(resourceBuilder)
+        resources[name] = resourceBuilder.build()
     }
 }
 
-/**
- * Class to support a 'builder' style in the DSL.  Provides infix function
- * to give a natural language way to describe property mappings for a resource.
- */
-class _UnmappedPropertyMapper(private val predicateUri: URI,
-                              private val propertyMapping: MutableMap<URI, String>) {
-    /**
-     * Infix 'of' -- assign provided literal value into the propertyMapping for
-     * given predicate URI.
-     */
-    infix fun of(literal: String) {
-        propertyMapping[predicateUri] = literal
+class ResourceBuilder() {
+    var uri: String? = null
+    fun build() = ResourceFactory.createResource(uri
+            ?: throw RuntimeException("No URI provided for resource"))
+}
+
+class StatementGatherer(val resourceMappings: Map<String, Resource>,
+                        val statements: MutableList<Statement> = mutableListOf()) {
+    operator fun String.not(): Resource {
+        return resourceMappings[this]
+                ?: throw IllegalArgumentException("Unknown resource: $this")
+    }
+
+//    operator fun Resource.invoke(builderFunction: StatementsBuilder.() -> Unit) {
+//        val statementsBuilder = StatementsBuilder(this)
+//        builderFunction(statementsBuilder)
+//        statements.addAll(statementsBuilder.statements)
+//    }
+
+    operator fun String.invoke(builderFunction: StatementsBuilder.() -> Unit) {
+        val resource = resourceMappings[this]
+                ?: throw IllegalArgumentException("Unknown resource: $this")
+        val statementsBuilder = StatementsBuilder(resource)
+        builderFunction(statementsBuilder)
+        statements.addAll(statementsBuilder.statements)
+    }
+}
+
+class StatementsBuilder(val subject: Resource,
+                        val statements: MutableList<Statement> = mutableListOf()) {
+    infix fun Property.of(tripleObject: Any) {
+        val obj = ResourceFactory.createTypedLiteral(tripleObject)
+        val statement = ResourceFactory.createStatement(subject, this, obj)
+        statements.add(statement)
     }
 }

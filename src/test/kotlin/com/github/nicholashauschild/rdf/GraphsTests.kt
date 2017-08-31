@@ -15,23 +15,16 @@ object RdfSpec : Spek({
     // shared property schema for all tests
     val pSchema =
 
-            pSchema("something") {
-                +"name" from !"http://something/name"
-                +"age" from !"http://something/age"
+            pSchema("http://something/{{property}}") {
+                +"enemies_with"
+                +"hair_color"
+                +"leg_count"
             }
 
     describe("the empty RdfGraph") {
         val graph =
 
                 rdfGraph {  }
-
-        on("accessing the iterator") {
-            val iterator = graph.listObjects()
-
-            it("has no elements") {
-                assertFalse(iterator.hasNext())
-            }
-        }
 
         it("has no statements") {
             assertTrue(graph.isEmpty)
@@ -42,97 +35,53 @@ object RdfSpec : Spek({
         val graph =
 
                 rdfGraph {
-                    resource(!"http://something/person/nick") {
-                        pSchema("name") of "Nick"
-                        pSchema("age") of "100"
+                    resources {
+                        "dog"("http://example/dog")
+                        "cat"("http://example/cat")
+                        "parrot"("http://example/parrot")
+                    }
+
+                    statements {
+                        "dog" {
+                            pSchema["enemies_with"] of !"cat"
+                            pSchema["hair_color"] of "golden"
+                            pSchema["leg_count"] of 4
+                        }
+
+                        "cat" {
+                            pSchema["enemies_with"] of !"parrot"
+                            pSchema["hair_color"] of "black"
+                            pSchema["leg_count"] of 4
+                        }
+
+                        "parrot" {
+                            pSchema["leg_count"] of 2
+                        }
                     }
                 }
 
-        it("has 2 statements") {
-            assertEquals(2, graph.size())
+        it("has 7 statements") {
+            assertEquals(7, graph.size())
         }
 
-        on("accessing the statement iterator") {
-            val iterator = graph.listStatements()
+        on("accessing resources with 'hair_color' property") {
+            val hairColorResources
+                    = graph.listSubjectsWithProperty(pSchema["hair_color"]).toSet()
 
-            val statement0 = iterator.nextStatement()
-
-            it("has a 0th subject") {
-                assertEquals("http://something/person/nick", statement0.subject.uri)
+            it("contains 2 resources") {
+                assertEquals(2, hairColorResources.size)
             }
 
-            it("has a 0th predicate") {
-                assertEquals("http://something/age", statement0.predicate.uri)
+            it("contains dog") {
+                assertTrue(hairColorResources.map { it.uri }.contains("http://example/dog"))
             }
 
-            it("has a 0th object (literal)") {
-                assertEquals("100", statement0.`object`.asLiteral().string)
+            it("contains cat") {
+                assertTrue(hairColorResources.map { it.uri }.contains("http://example/cat"))
             }
 
-            val statement1 = iterator.nextStatement()
-
-            it("has a 1st subject") {
-                assertEquals("http://something/person/nick", statement1.subject.uri)
-            }
-
-            it("has a 1st predicate") {
-                assertEquals("http://something/name", statement1.predicate.uri)
-            }
-
-            it("has a 1st object (literal)") {
-                assertEquals("Nick", statement1.`object`.asLiteral().string)
-            }
-        }
-    }
-
-    describe("the RdfGraph with split resource definition") {
-        val graph =
-
-                rdfGraph {
-                    val nick = !"http://something/person/nick"
-
-                    resource(nick) {
-                        pSchema("age") of "100"
-                    }
-
-                    resource(nick) {
-                        pSchema("name") of "Nick"
-                    }
-                }
-
-        it("has 2 statements") {
-            assertEquals(2, graph.size())
-        }
-
-        on("accessing the statement iterator") {
-            val iterator = graph.listStatements()
-
-            val statement0 = iterator.nextStatement()
-
-            it("has a 0th subject") {
-                assertEquals("http://something/person/nick", statement0.subject.uri)
-            }
-
-            it("has a 0th predicate") {
-                assertEquals("http://something/name", statement0.predicate.uri)
-            }
-
-            it("has a 0th object (literal)") {
-                assertEquals("Nick", statement0.`object`.asLiteral().string)
-            }
-
-            val statement1 = iterator.nextStatement()
-
-            it("has a 1st subject") {
-                assertEquals("http://something/person/nick", statement1.subject.uri)
-            }
-
-            it("has a 1st predicate") {
-                assertEquals("http://something/age", statement1.predicate.uri)
-            }
-
-            it("has a 1st object (literal)") {
-                assertEquals("100", statement1.`object`.asLiteral().string)
+            it("does not contain parrot") {
+                assertFalse(hairColorResources.map { it.uri }.contains("http://example/parrot"))
             }
         }
     }
