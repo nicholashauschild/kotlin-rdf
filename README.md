@@ -31,15 +31,17 @@ The `propertySchema` DSL is used to setup a property or predicate 'namespace'.
 
 Example:
 ```
-pSchema {
-    // the property 'function' is used to map a logical name to a URI.
-    property("name") { !"http://something/property/name" }
+propertySchema("http://example/schema/{{property}}") {
+    // add mapped property without any customization.
+    // equivalent to the shorthand method mentioned below.
+    "price" {}
     
-    // the prop 'function' is an alias for the 'property' function.
-    prop("age") { !"http://something/property/age" }
+    // add mapped property with customizations.
+    "color" { uri = "http://sample/catalog/color" }
     
-    // a short-hand means to map a logical name to a URI.
-    +"height" from !"http://something/property/height"
+    // same behavior as the first method.  This one just
+    // does not allow you to customize it yourself.
+    +"count"
 }
 ```
 
@@ -51,27 +53,45 @@ Example:
 Please note this example uses the propertySchema DSL to illustrate
 its usefulness.
 ```
-val schemaA = pdfSchema {
-    ...
-}
+val props =
 
-val schemaB = pdfSchema {
-    ...
-}
+        pSchema("http://example/props/{{property}}") {
+            +"enemies_with"
+            +"hair_color"
+            +"leg_count"
+        }
 
-rdfGraph {
-    // defines a resource, using a URI.
-    resource(!"http://something/person/nick") {
-        // uses a predicate of schemaA to map a predicate
-        // to an object (literal this time), creating a triple for the model.
-        schemaA("name") of "Nick"
-        // uses a predicate of schemaB to map a predicate
-        // to an object (literal this time), creating a triple for the model.
-        schemaB("age") of "100"
-    }
-}
+val model =
+
+        rdfGraph {
+            resources {
+                //resources are created and able to be referenced by name at a later time.
+                "dog"("http://example/dog")
+                "cat"("http://example/cat")
+                "parrot"("http://example/parrot")
+            }
+
+            statements {
+                //referring to resources by shorthand name, and creating property
+                //mappings for this name.
+                "dog" {
+                    schema["enemies_with"] of !"cat"
+                    schema["hair_color"] of "golden"
+                    schema["leg_count"] of 4
+                }
+
+                "cat" {
+                    schema["enemies_with"] of !"parrot"
+                    schema["hair_color"] of "black"
+                    schema["leg_count"] of 4
+                }
+
+                "parrot" {
+                    schema["leg_count"] of 2
+                }
+            }
+        }
 ```
 
 ## Questions
 1. Why are you doing this? To learn how to make a DSL in Kotlin and to learn more about RDF.
-2. Why can't I create a triple with the Object being a Resource (or even a non-String literal)?  Because I haven't written that functionality yet.
