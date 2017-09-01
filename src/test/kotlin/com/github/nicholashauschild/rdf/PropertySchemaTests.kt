@@ -86,4 +86,29 @@ object PropertySchemaSpec : Spek({
             }
         }
     }
+
+    describe("the schema with aliased properties") {
+        val schema =
+
+                pSchema("http://example.com/schema/{{property}}") {
+                    "number" { uri = "http://sample.com/props/number" } alias "n"
+                    +"title" alias "t"
+                }
+
+        on("accessing the number property") {
+            val number = schema["number"]
+
+            it("has the same reference as the 'n' property") {
+                assertTrue(number === schema["n"])
+            }
+        }
+
+        on("accessing the title property") {
+            val title = schema["title"]
+
+            it("has the same reference as the 't' property") {
+                assertTrue(title === schema["t"])
+            }
+        }
+    }
 })
