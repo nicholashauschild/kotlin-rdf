@@ -151,7 +151,10 @@ class StatementsBuilder(val subject: Resource,
      * with the provided subject (Resource).
      */
     infix fun Property.of(tripleObject: Any) {
-        val obj = ResourceFactory.createTypedLiteral(tripleObject)
+        val obj = when (tripleObject) {
+            is Resource     -> tripleObject
+            else            -> ResourceFactory.createTypedLiteral(tripleObject)
+        }
         val statement = ResourceFactory.createStatement(subject, this, obj)
         statements.add(statement)
     }
