@@ -84,5 +84,26 @@ object RdfSpec : Spek({
                 assertFalse(hairColorResources.map { it.uri }.contains("http://example/parrot"))
             }
         }
+
+        on("accessing objects with 'enemies_with' property") {
+            val enemiesWithObjects
+                    = graph.listObjectsOfProperty(pSchema["enemies_with"]).toSet()
+
+            it("contains 2 resources") {
+                assertEquals(2, enemiesWithObjects.size)
+            }
+
+            it("contains parrot") {
+                assertTrue(enemiesWithObjects.map { it.asResource().uri }.contains("http://example/parrot"))
+            }
+
+            it("contains cat") {
+                assertTrue(enemiesWithObjects.map { it.asResource().uri }.contains("http://example/cat"))
+            }
+
+            it("does not contain dog") {
+                assertFalse(enemiesWithObjects.map { it.asResource().uri }.contains("http://example/dog"))
+            }
+        }
     }
 })
