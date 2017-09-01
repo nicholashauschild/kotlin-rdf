@@ -61,18 +61,31 @@ class PropertySchemaBuilder(val namespace: String,
      * Shorthand mechanism for adding a property and mapping it in the schema.
      * No customization of the property is allowed with this setup.
      */
-    operator fun String.unaryPlus() {
-        propertyMap[this] = PropertyBuilder(this, namespace).build()
+    operator fun String.unaryPlus(): Property {
+        val property = PropertyBuilder(this, namespace).build()
+        propertyMap[this] = property
+        return property;
+    }
+
+    /**
+     * Add an alias to a property, making the property available via the
+     * schema under the alias text.  Returns property, so it can be chained.
+     */
+    infix fun Property.alias(alias: String): Property {
+        propertyMap[alias] = this
+        return this;
     }
 
     /**
      * 'Traditional' approach of using the builderFunction and the PropertyBuilder
      * receiver object to allow for full customization of properties.
      */
-    operator fun String.invoke(builderFunction: PropertyBuilder.() -> Unit) {
+    operator fun String.invoke(builderFunction: PropertyBuilder.() -> Unit): Property {
         val propertyBuilder = PropertyBuilder(this, namespace)
         builderFunction(propertyBuilder)
-        propertyMap[this] = propertyBuilder.build()
+        val property = propertyBuilder.build()
+        propertyMap[this] = property
+        return property
     }
 
     /**
@@ -88,6 +101,7 @@ class PropertySchemaBuilder(val namespace: String,
 class PropertyBuilder(propName: String,
                       namespace: String) {
     var uri = namespace.replace("{{property}}", propName)
+    var alias: String? = null
 
     /**
      * Build a Property object with the properties of this instance.

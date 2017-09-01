@@ -18,7 +18,10 @@ object RdfSpec : Spek({
             pSchema("http://something/{{property}}") {
                 +"enemies_with"
                 +"hair_color"
-                +"leg_count"
+                +"leg_count" alias "lc" alias "l" alias "c"
+                "tail_count" {
+                    uri = "http://something_else/tail_count"
+                } alias "tc"
             }
 
     describe("the empty RdfGraph") {
@@ -103,6 +106,81 @@ object RdfSpec : Spek({
 
             it("does not contain dog") {
                 assertFalse(enemiesWithObjects.map { it.asResource().uri }.contains("http://example/dog"))
+            }
+        }
+    }
+
+    describe("the RdfGraph with statements using aliased predicates") {
+        val graph =
+
+                rdfGraph {
+                    resources {
+                        "dog"("http://example/dog")
+                        "cat"("http://example/cat")
+                        "parrot"("http://example/parrot")
+                    }
+
+                    statements {
+                        "dog" {
+                            pSchema["enemies_with"] of !"cat"
+                            pSchema["hair_color"] of "golden"
+                            pSchema["lc"] of 4
+                            pSchema["tail_count"] of 1
+                        }
+
+                        "cat" {
+                            pSchema["enemies_with"] of !"parrot"
+                            pSchema["hair_color"] of "black"
+                            pSchema["l"] of 4
+                            pSchema["tc"] of 1
+                        }
+
+                        "parrot" {
+                            pSchema["c"] of 2
+                            pSchema["tc"] of 2
+                        }
+                    }
+                }
+
+        it("has 9 statements") {
+            assertEquals(10, graph.size())
+        }
+
+        on("accessing resources with 'leg_count' property") {
+            val legCountResources
+                    = graph.listSubjectsWithProperty(pSchema["leg_count"]).toSet()
+
+            it("contains 3 resources") {
+                assertEquals(3, legCountResources.size)
+            }
+
+            it("contains dog") {
+                assertTrue(legCountResources.map { it.uri }.contains("http://example/dog"))
+            }
+
+            it("contains cat") {
+                assertTrue(legCountResources.map { it.uri }.contains("http://example/cat"))
+            }
+
+            it("contains parrot") {
+                assertTrue(legCountResources.map { it.uri }.contains("http://example/parrot"))
+            }
+        }
+
+        on("accessing objects with 'tail_count' property via 'tc' alias") {
+            val tailCountWithObjects
+                    = graph.listObjectsOfProperty(pSchema["tc"]).toSet()
+
+            it("contains 2 resources") {
+                assertEquals(2, tailCountWithObjects.size)
+            }
+
+            it("contains 1") {
+                assertTrue(tailCountWithObjects.map { it.asLiteral().int }.contains(1))
+            }
+
+            it("contains 2") {
+                assertTrue(tailCountWithObjects.map { it.asLiteral().int }.contains(2))
             }
         }
     }
