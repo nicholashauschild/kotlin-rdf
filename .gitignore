@@ -5,6 +5,7 @@ build/
 ### Intellij
 .idea
 *.iml
+out/
 
 ### DO NOT IGNORE...
 ### Gradle Wrapper jar
