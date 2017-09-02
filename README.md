@@ -45,6 +45,24 @@ propertySchema("http://example/schema/{{property}}") {
 }
 ```
 
+###### Aliasing properties
+If a property name is too long, or you would like to have more options
+regarding how it is referred within your graphs, then you can utilize
+the alias keyword to create aliases for property names.
+
+Example:
+```
+propertySchema("http://example/schema/{{property}}") {
+    "price" {} alias "cost"
+    "color" { uri = "http://sample/catalog/color" } alias "pigment?"
+    +"count" alias "number"
+}
+```
+
+In the above example, 'price' and 'cost' are two different names that refer to
+the same property.
+
+
 ##### rdfGraph
 The `rdfGraph` DSL is meant to create an RDF graph or model
 that can then be queried against.
