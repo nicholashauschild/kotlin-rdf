@@ -5,6 +5,7 @@ import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
 import org.jetbrains.spek.api.dsl.on
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -256,6 +257,126 @@ object RdfSpec : Spek({
 
             it("contains 2") {
                 assertTrue(tailCountWithObjects.map { it.asLiteral().int }.contains(2))
+            }
+        }
+    }
+
+    describe("the RdfGraph with statements using multiple embedded schemas") {
+        val secondSchema =
+
+                pSchema("http://somethingelse/{{property}}") {
+                    +"enemies_with"
+                }
+
+        val graph =
+
+                rdfGraph(secondSchema, pSchema) {
+                    resources {
+                        "dog"("http://example/dog")
+                        "cat"("http://example/cat")
+                        "parrot"("http://example/parrot")
+                    }
+
+                    statements {
+                        "dog" {
+                            "enemies_with" of !"cat"
+                            "hair_color" of "golden"
+                            "lc" of 4
+                            "tail_count" of 1
+                        }
+
+                        "cat" {
+                            "enemies_with" of !"parrot"
+                            "hair_color" of "black"
+                            "l" of 4
+                            "tc" of 1
+                        }
+
+                        "parrot" {
+                            "c" of 2
+                            "tc" of 2
+                        }
+                    }
+                }
+
+        it("has 10 statements") {
+            assertEquals(10, graph.size())
+        }
+
+        on("accessing resources with 'leg_count' property") {
+            val legCountResources
+                    = graph.listSubjectsWithProperty(pSchema["leg_count"]).toSet()
+
+            it("contains 3 resources") {
+                assertEquals(3, legCountResources.size)
+            }
+
+            it("contains dog") {
+                assertTrue(legCountResources.map { it.uri }.contains("http://example/dog"))
+            }
+
+            it("contains cat") {
+                assertTrue(legCountResources.map { it.uri }.contains("http://example/cat"))
+            }
+
+            it("contains parrot") {
+                assertTrue(legCountResources.map { it.uri }.contains("http://example/parrot"))
+            }
+        }
+
+        on("accessing objects with 'tail_count' property via 'tc' alias") {
+            val tailCountWithObjects
+                    = graph.listObjectsOfProperty(pSchema["tc"]).toSet()
+
+            it("contains 2 resources") {
+                assertEquals(2, tailCountWithObjects.size)
+            }
+
+            it("contains 1") {
+                assertTrue(tailCountWithObjects.map { it.asLiteral().int }.contains(1))
+            }
+
+            it("contains 2") {
+                assertTrue(tailCountWithObjects.map { it.asLiteral().int }.contains(2))
+            }
+        }
+
+        on("accessing objects with pSchema['enemies_with'] property via 'tc' alias") {
+            val pSchemaEnemiesWith
+                    = graph.listObjectsOfProperty(pSchema["enemies_with"]).toSet()
+
+            it("is empty") {
+                assertTrue(pSchemaEnemiesWith.isEmpty())
+            }
+        }
+
+        on("accessing objects with secondSchema['enemies_with'] property via 'tc' alias") {
+            val secondSchemaEnemiesWith
+                    = graph.listObjectsOfProperty(secondSchema["enemies_with"]).toSet()
+
+            it("contains 2") {
+                assertEquals(2, secondSchemaEnemiesWith.size)
+            }
+        }
+    }
+
+    describe("the RdfGraph with statements using no schemas") {
+        // nothing to do here...the test contains the setup due to failure
+        // in the model creation
+
+        it("fails when using shorthand property references.") {
+            assertFailsWith<NoSuchElementException> {
+                rdfGraph {
+                    resources {
+                        "dog"("http://example/dog")
+                    }
+
+                    statements {
+                        "dog" {
+                            "tail_count" of 1
+                        }
+                    }
+                }
             }
         }
     }
