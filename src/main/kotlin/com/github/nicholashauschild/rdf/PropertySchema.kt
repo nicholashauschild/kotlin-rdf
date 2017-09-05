@@ -48,6 +48,10 @@ class PropertySchema(val namespace: String,
     fun size(): Int {
         return properties.size
     }
+
+    fun containsKey(key: String): Boolean {
+        return properties.containsKey(key)
+    }
 }
 
 /**

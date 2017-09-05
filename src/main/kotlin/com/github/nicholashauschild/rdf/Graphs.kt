@@ -11,24 +11,27 @@ import java.net.URI
  * DSL starting point for creating an rdf graph.  Uses the default
  * Model according to Apache Jena [ModelFactory.createDefaultModel()].
  */
-fun rdfGraph(fulfillFunction: ModelFulfiller.() -> Unit): Model {
+fun rdfGraph(vararg propertySchemas: PropertySchema, fulfillFunction: ModelFulfiller.() -> Unit): Model {
     val model = ModelFactory.createDefaultModel()
-    return rdfGraphFrom(model, fulfillFunction)
+    return rdfGraphFrom(propertySchemas = *propertySchemas,
+                        model = model,
+                        fulfillFunction = fulfillFunction)
 }
 
 /**
  * Alias of 'rdfGraph'
  */
-fun rdfModel(fulfillFunction: ModelFulfiller.() -> Unit): Model {
-    return rdfGraph(fulfillFunction)
+fun rdfModel(vararg propertySchemas: PropertySchema, fulfillFunction: ModelFulfiller.() -> Unit): Model {
+    return rdfGraph(propertySchemas = *propertySchemas,
+                    fulfillFunction = fulfillFunction)
 }
 
 /**
  * DSL starting point for creating an rdf graph.  Uses the provided
  * Model to populate.
  */
-fun rdfGraphFrom(model: Model, fulfillFunction: ModelFulfiller.() -> Unit): Model {
-    val modelFulfiller = ModelFulfiller(model)
+fun rdfGraphFrom(vararg propertySchemas: PropertySchema, model: Model, fulfillFunction: ModelFulfiller.() -> Unit): Model {
+    val modelFulfiller = ModelFulfiller(propertySchemas.asList(), model)
     fulfillFunction(modelFulfiller)
     return model
 }
@@ -36,8 +39,10 @@ fun rdfGraphFrom(model: Model, fulfillFunction: ModelFulfiller.() -> Unit): Mode
 /**
  * Alias of 'rdfGraphFrom'
  */
-fun rdfModelFrom(model: Model, fulfillFunction: ModelFulfiller.() -> Unit): Model {
-    return rdfGraphFrom(model, fulfillFunction)
+fun rdfModelFrom(vararg propertySchemas: PropertySchema, model: Model, fulfillFunction: ModelFulfiller.() -> Unit): Model {
+    return rdfGraphFrom(propertySchemas = *propertySchemas,
+                        model = model,
+                        fulfillFunction = fulfillFunction)
 }
 
 /**
@@ -45,7 +50,8 @@ fun rdfModelFrom(model: Model, fulfillFunction: ModelFulfiller.() -> Unit): Mode
  * This object defines further DSL methods that can be utilized to 'fulfill' an
  * RdfModel or RdfGraph.
  */
-class ModelFulfiller(val model: Model) {
+class ModelFulfiller(val schemas: List<PropertySchema>,
+                     val model: Model) {
     private var resourceMapping: MutableMap<String, Resource> = mutableMapOf()
 
     /**
@@ -66,7 +72,7 @@ class ModelFulfiller(val model: Model) {
      * StatementGatherer that is provided to the parameter 'gatherFunction'.
      */
     fun statements(gatherFunction: StatementGatherer.() -> Unit) {
-        val statementGatherer = StatementGatherer(resourceMapping)
+        val statementGatherer = StatementGatherer(schemas, resourceMapping)
         gatherFunction(statementGatherer)
         model.add(statementGatherer.statements)
     }
@@ -109,7 +115,8 @@ class ResourceBuilder() {
  * This object defines further DSL methods that can be utilized to 'gather' statements
  * to be put into the Model.
  */
-class StatementGatherer(val resourceMappings: Map<String, Resource>,
+class StatementGatherer(val schemas: List<PropertySchema>,
+                        val resourceMappings: Map<String, Resource>,
                         val statements: MutableList<Statement> = mutableListOf()) {
     /**
      * Shorthand mechanism for referring to a Resource by mapped name.
@@ -134,7 +141,7 @@ class StatementGatherer(val resourceMappings: Map<String, Resource>,
     operator fun String.invoke(builderFunction: StatementsBuilder.() -> Unit) {
         val resource = resourceMappings[this]
                 ?: throw IllegalArgumentException("Unknown resource: $this")
-        val statementsBuilder = StatementsBuilder(resource)
+        val statementsBuilder = StatementsBuilder(resource, schemas)
         builderFunction(statementsBuilder)
         statements.addAll(statementsBuilder.statements)
     }
@@ -145,6 +152,7 @@ class StatementGatherer(val resourceMappings: Map<String, Resource>,
  * function.  Instances of this object can produce multiple Jena Statement Objects.
  */
 class StatementsBuilder(val subject: Resource,
+                        val schemas: List<PropertySchema>,
                         val statements: MutableList<Statement> = mutableListOf()) {
     /**
      * DSL Syntax function to give a 'natural language' touch to mapping a predicate/object
@@ -156,6 +164,17 @@ class StatementsBuilder(val subject: Resource,
             else            -> ResourceFactory.createTypedLiteral(tripleObject)
         }
         val statement = ResourceFactory.createStatement(subject, this, obj)
+        statements.add(statement)
+    }
+
+    infix fun String.of(tripleObject: Any) {
+        val obj = when(tripleObject) {
+            is Resource     -> tripleObject
+            else            -> ResourceFactory.createTypedLiteral(tripleObject)
+        }
+
+        val predicate = schemas.first { it.containsKey(this) }[this]
+        val statement = ResourceFactory.createStatement(subject, predicate, obj)
         statements.add(statement)
     }
 }

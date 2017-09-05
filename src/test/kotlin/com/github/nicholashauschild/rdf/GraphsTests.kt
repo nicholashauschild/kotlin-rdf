@@ -142,7 +142,82 @@ object RdfSpec : Spek({
                     }
                 }
 
-        it("has 9 statements") {
+        it("has 10 statements") {
+            assertEquals(10, graph.size())
+        }
+
+        on("accessing resources with 'leg_count' property") {
+            val legCountResources
+                    = graph.listSubjectsWithProperty(pSchema["leg_count"]).toSet()
+
+            it("contains 3 resources") {
+                assertEquals(3, legCountResources.size)
+            }
+
+            it("contains dog") {
+                assertTrue(legCountResources.map { it.uri }.contains("http://example/dog"))
+            }
+
+            it("contains cat") {
+                assertTrue(legCountResources.map { it.uri }.contains("http://example/cat"))
+            }
+
+            it("contains parrot") {
+                assertTrue(legCountResources.map { it.uri }.contains("http://example/parrot"))
+            }
+        }
+
+        on("accessing objects with 'tail_count' property via 'tc' alias") {
+            val tailCountWithObjects
+                    = graph.listObjectsOfProperty(pSchema["tc"]).toSet()
+
+            it("contains 2 resources") {
+                assertEquals(2, tailCountWithObjects.size)
+            }
+
+            it("contains 1") {
+                assertTrue(tailCountWithObjects.map { it.asLiteral().int }.contains(1))
+            }
+
+            it("contains 2") {
+                assertTrue(tailCountWithObjects.map { it.asLiteral().int }.contains(2))
+            }
+        }
+    }
+
+    describe("the RdfGraph with an embedded property schema") {
+        val graph =
+
+                rdfGraph(pSchema) {
+                    resources {
+                        "dog"("http://example/dog")
+                        "cat"("http://example/cat")
+                        "parrot"("http://example/parrot")
+                    }
+
+                    statements {
+                        "dog" {
+                            "enemies_with" of !"cat"
+                            "hair_color" of "golden"
+                            "lc" of 4
+                            pSchema["tail_count"] of 1
+                        }
+
+                        "cat" {
+                            pSchema["enemies_with"] of !"parrot"
+                            "hair_color" of "black"
+                            pSchema["l"] of 4
+                            "tc" of 1
+                        }
+
+                        "parrot" {
+                            pSchema["c"] of 2
+                            "tc" of 2
+                        }
+                    }
+                }
+
+        it("has 10 statements") {
             assertEquals(10, graph.size())
         }
 
