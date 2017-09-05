@@ -17,19 +17,19 @@ val model =
 
             statements {
                 "dog" {
-                    schema["enemies_with"] of !"cat"
-                    schema["hair_color"] of "golden"
-                    schema["leg_count"] of 4
+                    props["enemies_with"] of !"cat"
+                    props["hair_color"] of "golden"
+                    props["leg_count"] of 4
                 }
 
                 "cat" {
-                    schema["enemies_with"] of !"parrot"
-                    schema["hair_color"] of "black"
-                    schema["leg_count"] of 4
+                    props["enemies_with"] of !"parrot"
+                    props["hair_color"] of "black"
+                    props["leg_count"] of 4
                 }
 
                 "parrot" {
-                    schema["leg_count"] of 2
+                    props["leg_count"] of 2
                 }
             }
         }
