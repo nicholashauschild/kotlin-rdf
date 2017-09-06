@@ -9,7 +9,7 @@ This specific library is backed by Apache Jena.
 
 ## Usage
 
-#### Add dependency
+### Add dependency
 Release dependencies: Not yet released.  Still experimental.
 
 Snapshot dependencies: Not yet released.  They will be at the following location soon though...
@@ -24,9 +24,9 @@ dependencies {
 }
 ```
 
-#### DSL's
+### DSL's
 
-##### propertySchema
+#### propertySchema
 The `propertySchema` DSL is used to setup a property or predicate 'namespace'.
 
 Example:
@@ -45,7 +45,7 @@ propertySchema("http://example/schema/{{property}}") {
 }
 ```
 
-###### Aliasing properties
+##### Aliasing properties
 If a property name is too long, or you would like to have more options
 regarding how it is referred within your graphs, then you can utilize
 the alias keyword to create aliases for property names.
@@ -62,14 +62,32 @@ propertySchema("http://example/schema/{{property}}") {
 In the above example, 'price' and 'cost' are two different names that refer to
 the same property.
 
+##### propertySchema return type
+The `propertySchema` DSL returns an object of type `PropertySchema`.  This object
+has a function with signature `operator fun get(name: String): Property` which can be used to access the
+underlying property objects, which are implementations of the Property interface of the Apache Jena API.
 
-##### rdfGraph
+```
+val schema =
+    propertySchema("http://example/schema/{{property}}") {
+        +"height"
+    }
+    
+val aProperty: org.apache.jena.rdf.model.Property = schema["height"]
+assertEquals("http://example/schema/height", aProperty.getURI())
+```
+
+#### rdfGraph
 The `rdfGraph` DSL is meant to create an RDF graph or model
 that can then be queried against.
 
 Example:
-Please note this example uses the propertySchema DSL to illustrate
+
+*Note* this example uses the propertySchema DSL to illustrate
 its usefulness.
+
+*Note* this example uses an alias of `propertySchema` named `pSchema`.
+
 ```
 val props =
 
@@ -111,5 +129,18 @@ val model =
         }
 ```
 
+##### rdfGraph return type
+The `rdfGraph` DSL will return an object of type `org.apache.jena.rdf.model.Model` of the Apache Jena API.
+
+```
+val model =
+    rdfGraph {
+        // ...
+    }
+    
+val numStatements = model.size()
+```
+
 ## Questions
 1. Why are you doing this? To learn how to make a DSL in Kotlin and to learn more about RDF.
+2. Why doesn't this support feature x/y/z?  I am new to RDF, and so my understanding of it is limited.  If you have any requests, please let me know via email, or via the github issue system.  Please note that a feature request is NOT a guarantee that I will implement something.
