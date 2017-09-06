@@ -29,37 +29,64 @@ dependencies {
 #### propertySchema
 The `propertySchema` DSL is used to setup a property or predicate 'namespace'.
 
-Example:
+Here is an example that showcases the complete set of options available for creating a PropertySchema:
 ```
 propertySchema("http://example/schema/{{property}}") {
-    // add mapped property without any customization.
-    // equivalent to the shorthand method mentioned below.
-    "price" {}
-    
-    // add mapped property with customizations.
-    "color" { uri = "http://sample/catalog/color" }
-    
-    // same behavior as the first method.  This one just
-    // does not allow you to customize it yourself.
-    +"count"
+    "price" {
+        uri = "http://example/schema/price"
+    }
 }
 ```
+
+...and here is a breakdown, mostly line-by-line, of what is happening...
+
+`propertySchema("http://example/schema/{{property}}") {`
+
+This line is doing two things.
+1. It is establishing the start of the propertySchema DSL construct
+2. It is providing a value for the propertySchema's namespace.
+
+The namespace is useful for providing a default uri template, which will
+allow us to remove some superfluous configuration.
+
+***
+
+`    "price" {`
+
+This line is doing two things.
+1. It is providing a common name for a new property.
+2. It is establishing the start of the definition for the new property.
+
+***
+
+`        uri = "http://example/schema/price"`
+
+This line is defining the URI for the enclosing property.
+
+***
+
+The last two lines are closing their respective constructs.
+
+##### Property Configuration
+Here is a table with the configuration options available for a property:
+
+| Field | Required | Description           | Default Value |
+| ----- | -------- | --------------------- | ------------- |
+| uri   | false    | URI for this property | 'common name' merged into namespace template
 
 ##### Aliasing properties
-If a property name is too long, or you would like to have more options
-regarding how it is referred within your graphs, then you can utilize
-the alias keyword to create aliases for property names.
+If a property name is too long, or you would like to be allowed to refer
+to it with additional names, then you can utilize
+the `alias` keyword to create aliases for properties.
 
 Example:
 ```
 propertySchema("http://example/schema/{{property}}") {
-    "price" {} alias "cost"
-    "color" { uri = "http://sample/catalog/color" } alias "pigment?"
-    +"count" alias "number"
+    "color" { uri = "http://example/schema/color" } alias "pigment"
 }
 ```
 
-In the above example, 'price' and 'cost' are two different names that refer to
+In the above example, 'color' and 'pigment' are two different names that refer to
 the same property.
 
 ##### propertySchema return type
@@ -70,12 +97,51 @@ underlying property objects, which are implementations of the Property interface
 ```
 val schema =
     propertySchema("http://example/schema/{{property}}") {
-        +"height"
+        "height" { uri = "http://example/schema/height" }
     }
     
 val aProperty: org.apache.jena.rdf.model.Property = schema["height"]
 assertEquals("http://example/schema/height", aProperty.getURI())
 ```
+
+##### Reducing ceremonious syntax
+The propertySchema definition shown at the beginning of this section can be written up
+a bit more succinctly.
+
+In general, the idea behind the namespace template is to be able to use a common 'base' URI
+and derive the actual URI for each property from this template based on its name.  This is the
+default behavior of the property definition.  With this information, we can rewrite our initial
+propertySchema DSL definition like this, and we would get an equivalent result.
+
+```
+propertySchema("http://example/schema/{{property}}") {
+    "price" {} // uri is the value of the merged namespace template and property name
+}
+```
+
+Pairing this with the `alias` keyword, and you utilize whatever 'common name' for a property
+while still keeping the definition concise.  For example
+
+```
+propertySchema("http://example/schema/{{property}}") {
+    "some_silly_uri_prefix#price" {} alias "friendlyName"
+}
+```
+
+Going even further, you can use the unary plus operator to add a property that will provide no
+configuration outside of default values.
+
+```
+propertySchema("http://example/schema/{{property}}") {
+    +"price"
+}
+```
+
+*It is worth noting that these two variations may look the same now, but future versions of
+this library will likely utilize further customization of a property.  The unary plus operator
+will be creating a property with NO CUSTOMIZATION whatsoever, where the former syntax will
+allow for a pick/choose type of customization*
+
 
 #### rdfGraph
 The `rdfGraph` DSL is meant to create an RDF graph or model
@@ -83,10 +149,10 @@ that can then be queried against.
 
 Example:
 
-*Note* this example uses the propertySchema DSL to illustrate
+*Note* this example uses the `propertySchema` DSL to illustrate
 its usefulness.
 
-*Note* this example uses an alias of `propertySchema` named `pSchema`.
+*Note* this example uses shortcut mechanism's for the `propertySchema` DSL.  See 'Reducing the ceremonious syntax' for more details.
 
 ```
 val props =
