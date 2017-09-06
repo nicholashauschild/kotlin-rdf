@@ -1,7 +1,6 @@
 package com.github.nicholashauschild.rdf
 
 import org.apache.jena.rdf.model.*
-import java.net.URI
 
 /**
  * Author: nicholas.hauschild
