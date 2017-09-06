@@ -12,7 +12,7 @@ This specific library is backed by Apache Jena.
 ### Add dependency
 Release dependencies: Not yet released.  Still experimental.
 
-Snapshot dependencies: Not yet released.  They will be at the following location soon though...
+Snapshot dependencies:
 ```
 repositories {
     maven {
