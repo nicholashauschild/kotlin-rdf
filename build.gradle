@@ -172,8 +172,8 @@ artifactory {
 }
 
 bintray {
-    //user = bintrayUsername
-    //key = bintrayApiKey
+    user = bintrayUsername
+    key = bintrayApiKey
 
     publications = ['theJar']
     publish = true
