@@ -29,7 +29,7 @@ dependencies {
 #### propertySchema
 The `propertySchema` DSL is used to setup a property or predicate 'namespace'.
 
-Here is an example that showcases the complete set of options available for creating a PropertySchema:
+Here is an example that showcases the complete set of options available for using the propertySchema DSL:
 ```
 propertySchema("http://example/schema/{{property}}") {
     "price" {
@@ -147,12 +147,9 @@ allow for a pick/choose type of customization*
 The `rdfGraph` DSL is meant to create an RDF graph or model
 that can then be queried against.
 
-Example:
+Here is an example that showcases the complete set of options available for using the rdfGraph DSL:
 
-*Note* this example uses the `propertySchema` DSL to illustrate
-its usefulness.
-
-*Note* this example uses shortcut mechanism's for the `propertySchema` DSL.  See 'Reducing the ceremonious syntax' for more details.
+*Note* this example uses the `propertySchema` DSL 
 
 ```
 val props =
@@ -167,33 +164,87 @@ val model =
 
         rdfGraph {
             resources {
-                //resources are created and able to be referenced by name at a later time.
                 "dog"("http://example/dog")
                 "cat"("http://example/cat")
                 "parrot"("http://example/parrot")
             }
-
             statements {
-                //referring to resources by shorthand name, and creating property
-                //mappings for this name.
                 "dog" {
                     props["enemies_with"] of !"cat"
                     props["hair_color"] of "golden"
                     props["leg_count"] of 4
                 }
-
                 "cat" {
                     props["enemies_with"] of !"parrot"
                     props["hair_color"] of "black"
                     props["leg_count"] of 4
                 }
-
                 "parrot" {
                     props["leg_count"] of 2
                 }
             }
         }
 ```
+
+...and here is a breakdown, mostly line-by-line, of what is happening...
+
+`rdfGraph {`
+
+This line is establishing the start of the rdfGraph DSL construct
+
+***
+
+`resources {`
+
+This line is establishing the start of resource definitions.  Resources
+defined within this construct are utilized later in statement creation.
+
+***
+
+```
+"dog"("http://example/dog")
+"cat"("http://example/cat")
+"parrot"("http://example/parrot")
+```
+                 
+These lines are creating resources, which can be referred to by the leading String,
+using a short-hand syntax `!"name"`.  This syntax, when used in the `statements` dsl 
+construct will refer to the actual Resource objects themselves.
+
+***
+
+`statements {`
+
+This line is establishig the start of statement definitions.  Statements
+are created with a Subject-Predicate-Object triple setup, with the Object
+portion able to be literals or other Resources.
+
+***
+
+`"dog" {` or `"cat" {` or `"parrot" {`
+
+These lines are the 'Subject' part of the triple.  A block is started as a
+shorthand means of defining multiple predicate/object pairs for each subject.
+
+***
+
+```
+props["enemies_with"] of !"cat"
+props["hair_color"] of "golden"
+props["leg_count"] of 4
+```
+
+These lines show three different predicate/object pairs that will be assigned with
+the enclosing subject to create triples.
+
+The first maps the Predicate of name 'enemies_with' from the PropertySchema
+to the 'cat' Resource (remember the !"cat" syntax)
+
+The second maps the Predicate of name 'hair_color' from the PropertySchema to
+the string literal 'golden'.
+
+The third maps the Predicate of name 'leg_count' from the PropertySchema to
+the integer literal 4.
 
 ##### rdfGraph return type
 The `rdfGraph` DSL will return an object of type `org.apache.jena.rdf.model.Model` of the Apache Jena API.
@@ -206,6 +257,36 @@ val model =
     
 val numStatements = model.size()
 ```
+
+##### Reducing ceremonious syntax
+It is possible to simply references to PropertySchema properties.  It requires
+providing the PropertySchemas to your `rdfGraph` DSL setup.
+
+```
+val props1: PropertySchema = //...
+val props2: PropertySchema = //...
+
+val model =
+
+        rdfGraph(props1, props2) {
+            resources {
+                "dog"("http://example/dog")
+            }
+            statements {
+                "dog" {
+                    "someProp" of 4
+                }
+            }
+        }
+```
+
+When providing more than one PropertySchema, they will be checked for a property
+in the order provided, returning the first matched property.  If none are found,
+an exception will be thrown.
+
+It is worth pointing out that the String itself is NOT being considered a Property
+on its own (unlike how !"name" is used to refer to a Resource).  This works as is
+only when used in the form of `"string" of [literal/resource]`
 
 ## Questions
 1. Why are you doing this? To learn how to make a DSL in Kotlin and to learn more about RDF.
