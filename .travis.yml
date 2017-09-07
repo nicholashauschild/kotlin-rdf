@@ -12,10 +12,10 @@ before_install:
 #script:
 #  - ./gradlew check
 
-#before_deploy:
-#  - echo "Creating release tag if necessary"
-#  - ./travis_scripts/tag_if_release.sh
-#  - echo "git describe $(git describe)"
+before_deploy:
+  - echo "Creating release tag if necessary"
+  - ./travis_scripts/tag_if_release.sh
+  - echo "git describe $(git describe)"
 
 deploy:
   - provider: script
@@ -24,15 +24,15 @@ deploy:
     on:
       branch: master
       condition: "$(cat 'version.txt') =~ ^.*SNAPSHOT$"
-#  - provider: script
-#    skip_cleanup: true
-#    script: ./travis_scripts/releaseDeploy.sh
-#    on:
-#      branch: master
-#      condition: "! $(cat 'version.txt') =~ ^.*SNAPSHOT$"
-#
-#after_deploy:
-#  - echo "Pushing tags (if necessary)"
-#  - ./travis_scripts/push_tag_if_release.sh
-#  - echo "Setting next snapshot (if necessary)"
-#  - ./travis_scripts/set_next_snapshot.sh
+  - provider: script
+    skip_cleanup: true
+    script: ./travis_scripts/releaseDeploy.sh
+    on:
+      branch: master
+      condition: "! $(cat 'version.txt') =~ ^.*SNAPSHOT$"
+
+after_deploy:
+  - echo "Pushing tags (if necessary)"
+  - ./travis_scripts/push_tag_if_release.sh
+  - echo "Setting next snapshot (if necessary)"
+  - ./travis_scripts/set_next_snapshot.sh
